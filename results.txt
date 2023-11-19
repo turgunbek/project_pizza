@@ -1,0 +1,18 @@
+PS B:\Avito\Python\project_pizza> python cli.py menu
+- Margherita 🧀 : tomato sauce, mozzarella, tomatoes
+- Pepperoni 🍕 : tomato sauce, mozzarella, pepperoni
+- Hawaiian 🍍 : tomato sauce, mozzarella, chicken, pineapples
+PS B:\Avito\Python\project_pizza>
+PS B:\Avito\Python\project_pizza> python cli.py order pepperoni
+bake👨‍🍳 Приготовили Pepperoni размера L за 3с!
+pickup🕑 Самовывоз пиццы. Ожидаем 3с!
+PS B:\Avito\Python\project_pizza>
+PS B:\Avito\Python\project_pizza> python cli.py order HAWAIIAN --delivery
+bake👨‍🍳 Приготовили Hawaiian размера L за 5с!
+deliver🛵 Доставили за 2с!
+PS B:\Avito\Python\project_pizza>
+PS B:\Avito\Python\project_pizza> python cli.py order Hawaiian --delivery --size XL
+bake👨‍🍳 Приготовили Hawaiian размера XL за 4с!
+deliver🛵 Доставили за 1с!
+PS B:\Avito\Python\project_pizza> python cli.py order Caesar
+Пицца с именем Caesar не найдена в меню.

@@ -47,7 +47,8 @@ class Hawaiian(Pizza):
     """
     def __init__(self):
         super().__init__('Hawaiian', EMOJI_HAWAIIAN,
-                         ['tomato sauce', 'mozzarella', 'chicken', 'pineapples'])
+                         ['tomato sauce', 'mozzarella', 'chicken',
+                          'pineapples'])
 
 
 def log(func):
@@ -71,14 +72,13 @@ def cli() -> None:
 @click.argument('pizza_type', type=click.STRING)
 def order(delivery: bool, size: str, pizza_type: str) -> None:
     """Готовит пиццу и доставляет её (или оставляет для самовывоза)"""
-    pizza = None
     if pizza_type.lower() == 'margherita':
         pizza = Margherita()
     elif pizza_type.lower() == 'pepperoni':
         pizza = Pepperoni()
     elif pizza_type.lower() == 'hawaiian':
         pizza = Hawaiian()
-    if pizza is None:
+    else:
         click.echo(f'Пицца с именем {pizza_type} не найдена в меню.')
         return
     pizza.size = size

@@ -1,7 +1,13 @@
 import pytest
+import re
 from cli import log, order, menu, Margherita, Pepperoni, Hawaiian
 from cli import bake, deliver, pickup
 from click.testing import CliRunner
+
+
+EMOJI_COOK_MAN = '\U0001F468\u200D\U0001F373'
+EMOJI_CLOCK = '\U0001F551'
+EMOJI_MOTOR_SCOOTER = '\U0001F6F5'
 
 
 def test_log_decorator(capsys):
@@ -28,37 +34,28 @@ def test_log_decorator(capsys):
     assert result == 42
 
 
-def test_order_command():
+@pytest.mark.parametrize("size, pizza_type, delivery, expected_output", [
+    ('L', 'margherita', False, 'bake.*Margherita.*L.*'),
+    ('XL', 'pepperoni', True, r'bake.*Pepperoni.*XL[\s\S]*Доставили.*'),
+    ('L', 'hawaiian', False, r'bake.*Hawaiian.*L[\s\S]*Ожидаем.*'),
+    ('L', '4 сыра', False, 'Пицца с именем 4 сыра не найдена в меню.'),
+])
+def test_order_command(size, pizza_type, delivery, expected_output):
     """Тестирование команды Click order с использованием CliRunner()
     для имитации ввода и захвата вывода.
-    Для удобства внутри организованы подтесты Тест 1, Тест 2, Тест 3, Тест 4
+    Для повторяющихся паттернов использован параметрический тест.
+    Используются регулярные выражения для нахождения ключевых слов в выводе.
     """
     runner = CliRunner()
+    command = ['--size', size, '--delivery'] if delivery else ['--size', size]
+    command.extend([pizza_type])
 
-    # Тест 1: Проверяем создание объекта Margherita
-    result = runner.invoke(order, ['--size', 'L', 'margherita'])
-    assert 'bake' in result.output
-    assert 'Margherita' in result.output
-    assert 'L' in result.output
-    assert 'Доставили' not in result.output
+    result = runner.invoke(order, command)
 
-    # Тест 2: Проверяем создание объекта Pepperoni с доставкой
-    result = runner.invoke(order, ['--size', 'XL', '--delivery', 'pepperoni'])
-    assert 'bake' in result.output
-    assert 'Pepperoni' in result.output
-    assert 'XL' in result.output
-    assert 'Доставили' in result.output
-
-    # Тест 3: Проверяем создание объекта Hawaiian с самовывозом
-    result = runner.invoke(order, ['--size', 'L', 'hawaiian'])
-    assert 'bake' in result.output
-    assert 'Hawaiian' in result.output
-    assert 'L' in result.output
-    assert 'Доставили' not in result.output
-
-    # Тест 4: Проверяем случай, когда пицца не найдена в меню
-    result = runner.invoke(order, ['--size', 'L', '4 сыра'])
-    assert 'Пицца с именем 4 сыра не найдена в меню.' in result.output
+    assert result.exit_code == 0
+    match = re.search(expected_output, result.output)
+    assert match is not None, (f'Expected output not found.'
+                               f'Actual output: {result.output}')
 
 
 def test_menu_command():
@@ -74,41 +71,57 @@ def test_menu_command():
     pepperoni = Pepperoni()
     hawaiian = Hawaiian()
 
-    res_marg = f'- {margherita.name} {margherita.emoji} : {margherita.dict()}'
-    res_pepp = f'- {pepperoni.name} {pepperoni.emoji} : {pepperoni.dict()}'
-    res_hawa = f'- {hawaiian.name} {hawaiian.emoji} : {hawaiian.dict()}'
+    res_marg = (
+        f'- {margherita.name} {margherita.emoji} : '
+        f'{margherita.dict()[margherita.name]}')
+    res_pepp = (
+        f'- {pepperoni.name} {pepperoni.emoji} : '
+        f'{pepperoni.dict()[pepperoni.name]}')
+    res_hawa = (
+        f'- {hawaiian.name} {hawaiian.emoji} : '
+        f'{hawaiian.dict()[hawaiian.name]}')
 
     assert res_marg in result.output
     assert res_pepp in result.output
     assert res_hawa in result.output
 
 
-def test_bake_output(capsys):
+def test_bake_output(capsys, mocker):
     """Тестирование функции bake().
-    Проверяется с использованием мок-объекта
+    Проверяется с использованием мок-объекта.
+    Запатчено поведение randint.
     """
     pizza_mock = type('PizzaMock', (), {'name': 'TestPizza', 'size': 'L'})
+    mocker.patch('cli.randint', return_value=2)
     bake(pizza_mock)
     captured = capsys.readouterr()
-    assert 'Приготовили TestPizza размера L' in captured.out
+    expected_out = (f'bake{EMOJI_COOK_MAN} Приготовили '
+                    f'TestPizza размера L за 2с!\n')
+    assert captured.out == expected_out
 
 
-def test_deliver_output(capsys):
+def test_deliver_output(capsys, mocker):
     """Тестирование функции deliver().
-    Проверяется с использованием фикстуры capsys
+    Проверяется с использованием фикстуры capsys.
+    Запатчено поведение randint.
     """
+    mocker.patch('cli.randint', return_value=2)
     deliver()
     captured = capsys.readouterr()
-    assert 'Доставили' in captured.out
+    expected_out = f'deliver{EMOJI_MOTOR_SCOOTER} Доставили за 2с!\n'
+    assert captured.out == expected_out
 
 
-def test_pickup_output(capsys):
+def test_pickup_output(capsys, mocker):
     """Тестирование функции pickup().
-    Проверяется с использованием фикстуры capsys
+    Проверяется с использованием фикстуры capsys.
+    Запатчено поведение randint.
     """
+    mocker.patch('cli.randint', return_value=2)
     pickup()
     captured = capsys.readouterr()
-    assert 'Самовывоз' in captured.out
+    expected_out = f'pickup{EMOJI_CLOCK} Самовывоз пиццы. Ожидаем 2с!\n'
+    assert captured.out == expected_out
 
 
 if __name__ == '__main__':
